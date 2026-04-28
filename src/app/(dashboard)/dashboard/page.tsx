@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -10,6 +10,7 @@ import type { Profile, Subscription, GolfScore, CharitySelection, DrawResult, Dr
 
 export default async function DashboardPage() {
   const supabase = await createClient()
+  const adminClient = createAdminClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
@@ -22,7 +23,7 @@ export default async function DashboardPage() {
     { data: upcomingDrawRaw },
   ] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
-    supabase.from('subscriptions').select('*').eq('user_id', user.id).maybeSingle(),
+    adminClient.from('subscriptions').select('*').eq('user_id', user.id).maybeSingle(),
     supabase.from('golf_scores').select('*').eq('user_id', user.id).order('score_date', { ascending: false }).limit(5),
     supabase.from('charity_selections').select('*, charity:charities(*)').eq('user_id', user.id).maybeSingle(),
     supabase.from('draw_results').select('*, draw:draws(*)').eq('user_id', user.id).order('created_at', { ascending: false }).limit(3),
